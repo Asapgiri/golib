@@ -123,6 +123,34 @@ func Render(session session.Sessioner, w http.ResponseWriter, temp string, dto a
     main.Execute(w, session)
 }
 
+func RenderMultiTemplate(session session.Sessioner, w http.ResponseWriter, temp_files []string, dto any) {
+
+    session.Dto = dto
+
+    template_buffer := bytes.Buffer{}
+    for _, tf := range(temp_files) {
+        fil, _ := ReadArtifact(tf, w.Header())
+        temp, err := template.New(tf).Funcs(funcMap).Parse(fil)
+        if nil != err {
+            io.WriteString(w, "Multi Templating error!" + err.Error())
+            return
+        }
+
+        session.Main = template_buffer.String()
+        template_buffer = bytes.Buffer{}
+
+        temp.Execute(&template_buffer, session)
+    }
+
+    session.Main = template_buffer.String()
+    main, err := template.ParseFiles(base_template_path)
+    if nil != err {
+        io.WriteString(w, "Multi Templating error main!" + err.Error())
+        return
+    }
+    main.Execute(w, session)
+}
+
 // Prerender does not support session if you don't pass it...
 func PreRender(temp string, dto any) string {
     var tpl bytes.Buffer
