@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
@@ -36,6 +37,16 @@ func sizeToText(size int) string {
     }
 }
 
+func Subset(a []string, b []string) bool {
+    for _, s := range(a) {
+        if slices.Contains(b, s) {
+            return true
+        }
+    }
+
+    return false
+}
+
 var funcMap = template.FuncMap {
     "inc":      func(i int) int {return i + 1},
     "dec":      func(i int) int {return i - 1},
@@ -46,6 +57,8 @@ var funcMap = template.FuncMap {
     "day":      func() time.Duration {return time.Hour * 24},
     "tformat":  func(a time.Time) string {return a.Local().Format("2006-01-02 15:04:05")},
     "shorten":  func(s string, newLen int) string {return s[:newLen] + ".." + s[len(s)-(newLen/2):]},
+    "scon":     func(arr []string, x string) bool {return slices.Contains(arr, x)},
+    "subset":   Subset,
 }
 
 func ReadArtifact(path string, header http.Header) (string, string) {

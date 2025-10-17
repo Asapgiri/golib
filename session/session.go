@@ -40,7 +40,7 @@ type Sessioner struct {
 
 //FIXME: Handle fully separately in every function/session!!
 //var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
-var store = sessions.NewCookieStore([]byte("lsjdglkhdsagjklhads;fjklhasl;kfjs"))
+var store = sessions.NewCookieStore([]byte("fsjdglkhdsagjklhads;fjklhasl;kfjs"))
 var sessionName = "dunakeke"
 
 func (session *Sessioner) Authenticate(r *http.Request) {
