@@ -25,11 +25,13 @@ type Auth struct {
     Roles       []string
     IsAdmin     bool
     IsMod       bool
+    IsEditor    bool
 }
 
 type Sessioner struct {
     Config      Config
     Auth        Auth
+    Error       any
     Main        string
     Path        string
     Dto         any

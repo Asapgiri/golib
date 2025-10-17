@@ -1,4 +1,4 @@
-module asapgiri/golib
+module github.com/asapgiri/golib
 
 go 1.24.5
 
