@@ -28,6 +28,8 @@ type Auth struct {
     IsEditor    bool
 }
 
+type MetaData map[string]string
+
 type Sessioner struct {
     Config      Config
     Auth        Auth
@@ -37,6 +39,7 @@ type Sessioner struct {
     Path        string
     Dto         any
     Dictionary  any
+    Meta        MetaData
 }
 
 //FIXME: Handle fully separately in every function/session!!
@@ -75,4 +78,9 @@ func (session *Sessioner) SetError(msg string) {
 
 func (session *Sessioner) UpdateTitle(config Config, title string) {
     session.Config.Title = config.Title + config.TitleSeparator + title
+}
+
+func (md *MetaData) Add(key string, value string) *MetaData {
+    (*md)[key] = value
+    return md
 }
