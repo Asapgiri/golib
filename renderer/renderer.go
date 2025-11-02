@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"asapgiri/golib/session"
+	"asapgiri/golib/logger"
 	"bytes"
 	"io"
 	"mime/multipart"
@@ -18,6 +19,12 @@ import (
 var artifact_path string = "artifacts/"
 var html_path string = "html/"
 var base_template_path string = html_path + "base.html"
+var template_files_path string = html_path + "templates/"
+
+var log = logger.Logger {
+    Color: logger.Colors.Brown_Orange,
+    Pretext: "renderer",
+}
 
 var file_types = map[string]string {
     "html": "text",
@@ -37,6 +44,14 @@ func sizeToText(size int) string {
     }
 }
 
+func seq(start, end int) []int {
+    s := make([]int, 0, end-start)
+    for i := start; i < end; i++ {
+        s = append(s, i)
+    }
+    return s
+}
+
 func Subset(a []string, b []string) bool {
     for _, s := range(a) {
         if slices.Contains(b, s) {
@@ -50,6 +65,7 @@ func Subset(a []string, b []string) bool {
 var funcMap = template.FuncMap {
     "inc":      func(i int) int {return i + 1},
     "dec":      func(i int) int {return i - 1},
+    "seq":      seq,
     "size":     sizeToText,
     "timegt":   func(a time.Time, b time.Time) bool {return b.Compare(a) > 0},
     "timelt":   func(a time.Time, b time.Time) bool {return b.Compare(a) <= 0},
@@ -115,9 +131,26 @@ func SaveArtifact(path string, file multipart.File) error {
     return nil
 }
 
+func get_template_files() []string {
+    entries, err := os.ReadDir(template_files_path)
+    if nil != err {
+        return []string{}
+    }
+
+    var files []string
+    for _, e := range(entries) {
+        if !e.IsDir() {
+            files = append(files, filepath.Join(template_files_path, e.Name()))
+        }
+    }
+
+    return files
+}
+
 func Render(session session.Sessioner, w http.ResponseWriter, temp string, dto any) {
     tmp, err := template.ParseFiles(base_template_path)
     if nil != err {
+        log.Println(err)
         io.WriteString(w, "Templating error!")
         return
     }
@@ -127,9 +160,17 @@ func Render(session session.Sessioner, w http.ResponseWriter, temp string, dto a
 
     var tpl bytes.Buffer
     tmp.Execute(&tpl, session)
-    main, err := template.New("Main").Funcs(funcMap).Parse(tpl.String())
+
+    main, err := template.New("Main").Funcs(funcMap).ParseFiles(get_template_files()...)
     if nil != err {
+        log.Println(err)
         io.WriteString(w, "Templating error 2!" + err.Error())
+        return
+    }
+    main, err = main.Parse(tpl.String())
+    if nil != err {
+        log.Println(err)
+        io.WriteString(w, "Templating error 3!" + err.Error())
         return
     }
 
@@ -156,7 +197,7 @@ func RenderMultiTemplate(session session.Sessioner, w http.ResponseWriter, temp_
     }
 
     session.Main = template_buffer.String()
-    main, err := template.ParseFiles(base_template_path)
+    main, err := template.ParseFiles(base_template_path, template_files_path + "pagination.html")
     if nil != err {
         io.WriteString(w, "Multi Templating error main!" + err.Error())
         return

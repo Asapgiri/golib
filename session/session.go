@@ -33,6 +33,7 @@ type Sessioner struct {
     Auth        Auth
     Error       any
     Main        string
+    MainDto     any
     Path        string
     Dto         any
     Dictionary  any
