@@ -197,7 +197,7 @@ func RenderMultiTemplate(session session.Sessioner, w http.ResponseWriter, temp_
     }
 
     session.Main = template_buffer.String()
-    main, err := template.ParseFiles(base_template_path, template_files_path + "pagination.html")
+    main, err := template.ParseFiles(base_template_path)
     if nil != err {
         io.WriteString(w, "Multi Templating error main!" + err.Error())
         return
