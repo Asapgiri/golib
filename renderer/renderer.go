@@ -1,8 +1,8 @@
 package renderer
 
 import (
-	"asapgiri/golib/session"
-	"asapgiri/golib/logger"
+	"github.com/asapgiri/golib/session"
+	"github.com/asapgiri/golib/logger"
 	"bytes"
 	"io"
 	"mime/multipart"
