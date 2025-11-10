@@ -147,12 +147,12 @@ func get_template_files() []string {
     return files
 }
 
-func Render(session session.Sessioner, w http.ResponseWriter, temp string, dto any) {
+func Render(session session.Sessioner, wr io.Writer, temp string, dto any) error {
     tmp, err := template.ParseFiles(base_template_path)
     if nil != err {
         log.Println(err)
-        io.WriteString(w, "Templating error!")
-        return
+        io.WriteString(wr, "Templating error!")
+        return err
     }
 
     session.Main = temp
@@ -164,29 +164,30 @@ func Render(session session.Sessioner, w http.ResponseWriter, temp string, dto a
     main, err := template.New("Main").Funcs(funcMap).ParseFiles(get_template_files()...)
     if nil != err {
         log.Println(err)
-        io.WriteString(w, "Templating error 2!" + err.Error())
-        return
+        io.WriteString(wr, "Templating error 2!" + err.Error())
+        return err
     }
     main, err = main.Parse(tpl.String())
     if nil != err {
         log.Println(err)
-        io.WriteString(w, "Templating error 3!" + err.Error())
-        return
+        io.WriteString(wr, "Templating error 3!" + err.Error())
+        return err
     }
 
-    main.Execute(w, session)
+    main.Execute(wr, session)
+    return nil
 }
 
-func RenderMultiTemplate(session session.Sessioner, w http.ResponseWriter, temp_files []string, dto any) {
+func RenderMultiTemplate(session session.Sessioner, wr io.Writer, temp_files []string, dto any) {
 
     session.Dto = dto
 
     template_buffer := bytes.Buffer{}
     for _, tf := range(temp_files) {
-        fil, _ := ReadArtifact(tf, w.Header())
+        fil, _ := ReadArtifact(tf, nil)
         temp, err := template.New(tf).Funcs(funcMap).Parse(fil)
         if nil != err {
-            io.WriteString(w, "Multi Templating error!" + err.Error())
+            io.WriteString(wr, "Multi Templating error!" + err.Error())
             return
         }
 
@@ -199,10 +200,10 @@ func RenderMultiTemplate(session session.Sessioner, w http.ResponseWriter, temp_
     session.Main = template_buffer.String()
     main, err := template.ParseFiles(base_template_path)
     if nil != err {
-        io.WriteString(w, "Multi Templating error main!" + err.Error())
+        io.WriteString(wr, "Multi Templating error main!" + err.Error())
         return
     }
-    main.Execute(w, session)
+    main.Execute(wr, session)
 }
 
 // Prerender does not support session if you don't pass it...
