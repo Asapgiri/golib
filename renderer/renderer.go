@@ -185,7 +185,8 @@ func RenderMultiTemplate(session session.Sessioner, wr io.Writer, temp_files []s
     template_buffer := bytes.Buffer{}
     for _, tf := range(temp_files) {
         fil, _ := ReadArtifact(tf, nil)
-        temp, err := template.New(tf).Funcs(funcMap).Parse(fil)
+        temp, err := template.New(tf).Funcs(funcMap).ParseFiles(get_template_files()...)
+        temp, err = temp.Parse(fil)
         if nil != err {
             io.WriteString(wr, "Multi Templating error!" + err.Error())
             return
@@ -210,7 +211,8 @@ func RenderMultiTemplate(session session.Sessioner, wr io.Writer, temp_files []s
 func PreRender(temp string, dto any) string {
     var tpl bytes.Buffer
 
-    tmp, err := template.New("Dto").Funcs(funcMap).Parse(temp)
+    tmp, err := template.New("Dto").Funcs(funcMap).ParseFiles(get_template_files()...)
+    tmp, err = tmp.Parse(temp)
     if nil != err {
         return err.Error()
     }
