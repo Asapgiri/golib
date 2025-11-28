@@ -4,6 +4,8 @@ import (
 	// "dunakeke/config"
 	// "dunakeke/dictionary"
 	// "dunakeke/logic"
+	"crypto/rand"
+	"encoding/base64"
 	"net/http"
 
 	"github.com/gorilla/sessions"
@@ -30,10 +32,20 @@ type Auth struct {
 
 type MetaData map[string]string
 
+type Error struct {
+    Type    string
+    Message string
+}
+
+type ErrorHandler struct {
+    errs []Error
+}
+
 type Sessioner struct {
+    id          string
     Config      Config
     Auth        Auth
-    Error       any
+    Error       ErrorHandler
     Main        string
     MainDto     any
     Path        string
@@ -41,6 +53,32 @@ type Sessioner struct {
     Dictionary  any
     Meta        MetaData
 }
+
+var err_list = map[string][]Error{}
+
+func (eh *ErrorHandler) init(id string) {
+    eh.errs, ok := err_list[id]
+    if !ok {
+        err_list[id] = []Error{}
+    }
+}
+
+func (eh *ErrorHandler) Set(typ string, msg string) {
+    append(eh.errs, Error{Type: typ, Message: msg})
+}
+
+func (eh *ErrorHandler) Get() []Error {
+    errs = eh.errs
+    eh.errs = []Error{}
+    return errs
+}
+
+func generateId() string {
+    bytes := make([]byte, 32)
+    rand.Read(bytes)
+    return base64.StdEncoding.EncodeToString(bytes)[:32]
+}
+
 
 //FIXME: Handle fully separately in every function/session!!
 //var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
@@ -50,9 +88,12 @@ var sessionName = "dunakeke"
 func (session *Sessioner) Authenticate(r *http.Request) {
     // TODO: Add request aut header
     real_session, _ := store.Get(r, sessionName)
-    uname, _ := real_session.Values[sessionName].(string)
+    uname, _ := real_session.Values["name"].(string)
+    id, _ := real_session.Values["id"].(string)
 
     session.Auth.Username = uname
+    session.id = id
+    session.Error.init(id)
 }
 
 func (session *Sessioner) New(w http.ResponseWriter, r *http.Request, uname string) {
@@ -60,9 +101,13 @@ func (session *Sessioner) New(w http.ResponseWriter, r *http.Request, uname stri
     store.MaxAge(86400)
     rsess, _ := store.New(r, sessionName)
 
-    rsess.Values[sessionName] = uname
+    id := generateId()
+
+    rsess.Values["name"] = uname
+    rsess.Values["id"] = id
     rsess.Save(r, w)
     session.Auth.Username = uname
+    session.id = id
 }
 
 func (session *Sessioner) Delete(w http.ResponseWriter, r *http.Request) {
