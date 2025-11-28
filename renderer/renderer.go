@@ -155,6 +155,7 @@ func Render(session session.Sessioner, wr io.Writer, temp string, dto any) error
         return err
     }
 
+    session.Notice.Clean()
     session.Main = temp
     session.Dto = dto
 
@@ -180,6 +181,7 @@ func Render(session session.Sessioner, wr io.Writer, temp string, dto any) error
 
 func RenderMultiTemplate(session session.Sessioner, wr io.Writer, temp_files []string, dto any) {
 
+    session.Notice.Clean()
     session.Dto = dto
 
     template_buffer := bytes.Buffer{}
