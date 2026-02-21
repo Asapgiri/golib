@@ -52,8 +52,12 @@ type Notice struct {
 }
 
 type NoticeHandler struct {
-    id string
+    id      string
     Notices []Notice
+}
+
+type StoreHandler struct {
+    id      string
 }
 
 type Sessioner struct {
@@ -67,9 +71,11 @@ type Sessioner struct {
     Dto         any
     Dictionary  any
     Meta        MetaData
+    Store       StoreHandler
 }
 
 var err_list = map[string][]Notice{}
+var store_list = map[string]map[string]any{}
 
 func (eh *NoticeHandler) init(id string) {
     errs, ok := err_list[id]
@@ -88,6 +94,28 @@ func (eh *NoticeHandler) Set(typ string, msg string) {
 
 func (eh *NoticeHandler) Clean() {
     delete(err_list, eh.id)
+}
+
+func (s *StoreHandler) init(id string) {
+    errs, ok := store_list[id]
+    if !ok {
+        errs = map[string]any{}
+        store_list[id] = errs
+    }
+    s.id = id
+}
+
+func (s *StoreHandler) Set(id string, value any) {
+    store_list[s.id][id] = value
+}
+
+func (s *StoreHandler) Get(id string) (any, bool) {
+    st, ok := store_list[s.id][id]
+    return st, ok
+}
+
+func (s *StoreHandler) Remove(id string) {
+    delete(store_list[s.id], id)
 }
 
 func generateId() string {
@@ -117,6 +145,7 @@ func (session *Sessioner) Authenticate(w http.ResponseWriter, r *http.Request) {
     session.Auth.Username = uname
     session.id = id
     session.Notice.init(id)
+    session.Store.init(id)
 }
 
 func (session *Sessioner) New(w http.ResponseWriter, r *http.Request, uname string) {
