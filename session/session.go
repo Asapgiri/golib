@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/sessions"
 )
@@ -77,7 +78,13 @@ type Sessioner struct {
 var err_list = map[string][]Notice{}
 var store_list = map[string]map[string]any{}
 
+var noticeMu    sync.RWMutex
+var storeMu     sync.RWMutex
+
 func (eh *NoticeHandler) init(id string) {
+    noticeMu.Lock()
+    defer noticeMu.Unlock()
+
     errs, ok := err_list[id]
     if !ok {
         errs = []Notice{}
@@ -88,15 +95,24 @@ func (eh *NoticeHandler) init(id string) {
 }
 
 func (eh *NoticeHandler) Set(typ string, msg string) {
+    noticeMu.Lock()
+    defer noticeMu.Unlock()
+
     eh.Notices = append(eh.Notices, Notice{Type: typ, Message: msg})
     err_list[eh.id] = eh.Notices
 }
 
 func (eh *NoticeHandler) Clean() {
+    noticeMu.Lock()
+    defer noticeMu.Unlock()
+
     delete(err_list, eh.id)
 }
 
 func (s *StoreHandler) init(id string) {
+    storeMu.Lock()
+    defer storeMu.Unlock()
+
     errs, ok := store_list[id]
     if !ok {
         errs = map[string]any{}
@@ -106,15 +122,24 @@ func (s *StoreHandler) init(id string) {
 }
 
 func (s *StoreHandler) Set(id string, value any) {
+    storeMu.Lock()
+    defer storeMu.Unlock()
+
     store_list[s.id][id] = value
 }
 
 func (s *StoreHandler) Get(id string) (any, bool) {
+    storeMu.Lock()
+    defer storeMu.Unlock()
+
     st, ok := store_list[s.id][id]
     return st, ok
 }
 
 func (s *StoreHandler) Remove(id string) {
+    storeMu.Lock()
+    defer storeMu.Unlock()
+
     delete(store_list[s.id], id)
 }
 
